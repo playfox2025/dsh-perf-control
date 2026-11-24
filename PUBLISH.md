@@ -44,7 +44,7 @@ git push -u origin main
 第一次 push 会弹浏览器让你登录 GitHub 授权（Git 自带的 Credential Manager 干的），点一次以后就记住了。
 
 推之前可以先 `git status` 看一眼：`node_modules/` 应该被 `.gitignore` 挡掉，列出来的应该是
-`LICENSE`、`README.md`、`client.js`、`cordis.patch.yml`、`index.js`、`assets/`、`lib/`、`scripts/`、`.gitignore`、`package.json`。
+`LICENSE`、`README.md`、`README.en.md`、`client.js`、`cordis.patch.yml`、`index.js`、`assets/`、`lib/`、`locale/`、`scripts/`、`.gitignore`、`package.json`。
 
 ## 4. 打版本 tag
 
