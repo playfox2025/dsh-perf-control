@@ -49,13 +49,18 @@ git push -u origin main
 ## 4. 打版本 tag
 
 ```powershell
-git tag v0.1.0
+git tag v0.1.1
 git push --tags
 ```
 
-以后改版本：改 `package.json` 的 `version` → commit → `git tag v0.1.1` → `git push --tags`。
+以后改版本：改 `package.json` 的 `version` → commit → `git tag v0.1.2` → `git push --tags`。
 
-## 5. 发 npm（决定别人能不能一键装）
+## 5. 发 npm（可选，只是更省事）
+
+不发也能上架：市场装不到 npm 包时，会退到作者 Release 的 tarball，最后才回退整仓源码。
+差别有两点：没 npm 包时别人更新靠 commit 对比；整仓源码装下来的 `node_modules` 可能没有 koffi，滑块就只存设置不真限速。
+
+真要发：
 
 ```powershell
 npm login        # 浏览器/终端里填 npm 账号，会要 2FA 一次性码
@@ -70,19 +75,26 @@ npm publish --access public
 **发 GitHub 本身不会出现在市场。** DSH 插件市场（dshmarket）的列表来自精选列表
 [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)，市场也只允许安装那个列表里的插件。
 
-所以要走这一步：
+投稿不是改 README，是加一个数据文件（两个 README 由脚本生成，手改的会被覆盖）：
 
-1. 打开 https://github.com/awesome-dsh-plugin/awesome-dsh-plugin ，点 Fork。
-2. 在 `README.md` 里找到 `### Development & Runtime` 这一节，加一行（格式照邻居）：
+1. Fork 上面那个仓库，新建 `data/plugins/playfox2025__dsh-perf-control.yml`，形如：
 
+   ```yaml
+   url: https://github.com/playfox2025/dsh-perf-control
+   name: dsh-perf-control
+   category: tools
+   description:
+     en: CPU throttle for DSH on Windows: a 5–100 slider in Settings hard-caps the whole DSH process tree (ffmpeg, whisper, python, renderers) through a Windows Job Object.
+     zh: 给 DSH 加一根 CPU 限速滑块：设置页 5–100，用 Windows Job Object 硬限整棵进程树。
    ```
-   - [playfox2025/dsh-perf-control](https://github.com/playfox2025/dsh-perf-control) - CPU throttle for DSH on Windows: a 5–100 slider in Settings hard-caps the whole DSH process tree (ffmpeg, whisper, python, renderers) through a Windows Job Object, no native build step.
-   ```
 
-3. 中文条目加到 `README.zh.md` 同一分类下。
-4. 提交 PR，标题写 `Add dsh-perf-control`，正文一句说清楚是什么、Windows 限定、依赖 koffi。合并后站点和市场会自动收录，通常一天内。
+   `category` 只能取列表里的值（`tools` 就对），`description.en` 必填，`icon` 可选但要 GitHub 托管的位图。
 
-审核只看三件事：`dsh plugin add` 装得上、描述说的和做的一致、分类对、有人在维护。注意列表里对「HTTP 路由不做 DSH 访问检查」的插件会标警告 —— 我们走的是 harness 的 `connection` 门禁，这点可以在 PR 正文里提一句。
+2. 提交 PR，标题 `Add dsh-perf-control`，正文一句说清楚是什么、Windows 限定、没 koffi 只存设置。
+
+硬门槛（CI 会卡）：`package.json` 有 `dsh.bundle`、仓库根有 `cordis.patch.yml`、仓库带 `dsh-plugin` topic、仓库建满 1 天、一个 PR 最多 3 条。我们这条仓库 2026-11-24 13:50 建的，**11-25 之后**再提。
+
+审核只看三件事：装得上、描述说的和做的一致、有人在维护。列表里对「HTTP 路由不做 DSH 访问检查」的插件会标警告 —— 我们走的是 harness 的 `connection` 门禁，这点可以在 PR 正文里提一句。
 
 ## 7. 装给别人看
 
