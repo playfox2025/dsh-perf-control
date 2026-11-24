@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "性能控制",
+    "description": "设置页里一根 5–100 的滑块，通过 Windows Job Object 给 DSH 整棵进程树设硬性 CPU 上限，ffmpeg 抽帧、whisper 转写、python 这些子进程不再把核吃满。只支持 Windows；没装 koffi 时滑块只存设置不生效。"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Perf Control",
+    "description": "A Settings page with one 5–100 slider that hard-caps the whole DSH process tree through a Windows Job Object, so ffmpeg, whisper and python children stop using every core. Windows only; without koffi the slider only stores its value."
+  }
+}

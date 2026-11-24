@@ -16,7 +16,7 @@ dsh plugin --profile desktop add dsh-perf-control
 dsh plugin --profile desktop add github:playfox2025/dsh-perf-control
 ```
 
-装完重载一次插件（或重启 DSH），设置里就多一节「性能控制」。
+装完重载一次插件（或重启 DSH），设置里就多一节「性能控制」（英文界面下叫 Perf Control）。
 
 ## 用法
 
@@ -44,7 +44,7 @@ dsh plugin --profile desktop add github:playfox2025/dsh-perf-control
 
 `scripts/probe-throttle.mjs`：12 核机器，同一段忙循环不设限跑 2 秒吃 2.02 秒 CPU；设成 3% 上限后只吃 0.86 秒（3.6% 整机），限速是真的在压。
 
-`scripts/smoke-client.mjs`：客户端 bundle 冒烟，验证 factory 返回结构与 `settings.section` 注册。
+`scripts/smoke-client.mjs`：客户端 bundle 冒烟，覆盖「没 locale」「英文」「中文」三种环境，验证插槽注册、`label` 取值与整页渲染都不炸。
 
 ## 限制与已知坑
 
@@ -59,7 +59,7 @@ dsh plugin --profile desktop add github:playfox2025/dsh-perf-control
 - Windows（硬限速本身是 Windows API）。
 - DSH ≥ 0.2.1-rc.1（`engines.dsh`）。
 - Node ≥ 22。
-- UI 目前只有中文。
+- 界面跟随 DSH 的语言：中文显示「性能控制」，英文显示「Perf Control」。设置页文案在 `client.js` 的 `zh` / `en` 词典里，插件卡文案在 `locale/zh.json`、`locale/en.json`。
 
 ## 开发
 

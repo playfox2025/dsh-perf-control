@@ -5,6 +5,7 @@ window.__ModuleLoader__.load({
     const h = React.createElement
 
     const API = '/api/dsh-perf-control'
+    const NS = 'settings.perfControl'
 
     const CSS = `
 .dpc-root{display:flex;flex-direction:column;gap:18px;max-width:760px;padding:4px 2px 24px;color:inherit}
@@ -35,12 +36,97 @@ window.__ModuleLoader__.load({
 .dpc-err{color:#E0603C}
 `
 
-    function tierOf(limit) {
-      if (limit >= 100) return { key: 'off', label: '不限制' }
-      if (limit > 75) return { key: 'light', label: '轻度' }
-      if (limit > 50) return { key: 'normal', label: '轻度偏中' }
-      if (limit > 25) return { key: 'medium', label: '中度' }
-      return { key: 'hard', label: '严格' }
+    const zh = {
+      nav: '性能控制',
+      lead: '给 DSH 整棵进程树设一个 CPU 上限。看 B 站抽帧、whisper 转写、python 这些活都是 DSH 拉起来的子进程，一起算在这根线里。100% 等于放开。',
+      'tier.off': '不限制',
+      'tier.light': '轻度',
+      'tier.normal': '轻度偏中',
+      'tier.medium': '中度',
+      'tier.hard': '严格',
+      'live.prefix': '正在生效',
+      'btn.apply': '应用',
+      'btn.applying': '应用中…',
+      'btn.reset': '恢复不限制',
+      'note.applied': '已应用',
+      'note.savedOnly': '设置已存下，但限速没生效',
+      'note.reset': '已恢复不限制',
+      'warn.title': '硬限速后端还没就绪：koffi 没装上，现在只会存设置，不会真的压 CPU。',
+      'warn.installPre': '装一下就行：',
+      'warn.installPost': '（或者在插件目录里装），然后重启 DSH。',
+      'row.platform': '平台',
+      'row.backend': '后端',
+      'row.job': 'Job',
+      'row.cap': '已生效上限',
+      'row.state': '状态文件',
+      'val.loading': '读取中…',
+      'val.windowsOnly': '（只支持 Windows 硬限速）',
+      'val.notReady': '未就绪',
+      'val.jobAssigned': '已接管本进程树',
+      'val.jobCreated': '已建，未接管',
+      'val.jobNone': '未建',
+      'val.unlimited': '不限制',
+      footer: '两点限制先说清楚：滑块对已经在跑的进程不生效（Job 是接管之后新生的才继承）；这个上限管的是整棵树，包括界面进程，别一上来拉到 25%。',
+    }
+
+    const en = {
+      nav: 'Perf Control',
+      lead: 'Puts a CPU ceiling on the whole DSH process tree. Frame grabbing, whisper transcription and python jobs are all children DSH spawns, so they share this one budget. 100% means no limit.',
+      'tier.off': 'Unlimited',
+      'tier.light': 'Light',
+      'tier.normal': 'Light–medium',
+      'tier.medium': 'Medium',
+      'tier.hard': 'Strict',
+      'live.prefix': 'Active now',
+      'btn.apply': 'Apply',
+      'btn.applying': 'Applying…',
+      'btn.reset': 'Remove limit',
+      'note.applied': 'Applied',
+      'note.savedOnly': 'Saved, but the cap did not take effect',
+      'note.reset': 'Limit removed',
+      'warn.title': 'The hard-cap backend is not ready: koffi is missing, so the slider only stores its value and never throttles anything.',
+      'warn.installPre': 'Install it with',
+      'warn.installPost': '(or inside the plugin folder), then restart DSH.',
+      'row.platform': 'Platform',
+      'row.backend': 'Backend',
+      'row.job': 'Job',
+      'row.cap': 'Active cap',
+      'row.state': 'State file',
+      'val.loading': 'Loading…',
+      'val.windowsOnly': ' (Windows-only hard cap)',
+      'val.notReady': 'Not ready',
+      'val.jobAssigned': 'Attached to this process tree',
+      'val.jobCreated': 'Created, not attached',
+      'val.jobNone': 'Not created',
+      'val.unlimited': 'Unlimited',
+      footer: 'Two caveats: the slider does nothing for processes that are already running (only children spawned after the job takes over inherit it), and the cap covers the whole tree including the UI, so do not drag it to 25% right away.',
+    }
+
+    function systemFallback() {
+      const lang = typeof navigator === 'object' && navigator !== null ? String(navigator.language ?? '') : ''
+      return lang.toLowerCase().startsWith('zh') ? zh : en
+    }
+
+    /** 有 locale 服务就跟着 DSH 的界面语言走，没有就按浏览器语言挑一份。 */
+    function makeTranslator(locale) {
+      const fallback = systemFallback()
+      if (locale === undefined || locale === null || typeof locale.bind !== 'function') {
+        return (key) => fallback[key] ?? key
+      }
+      const bound = locale.bind(NS)
+      return (key) => {
+        const got = bound(key)
+        if (typeof got !== 'string' || got === '' || got === key) return fallback[key] ?? key
+        return got
+      }
+    }
+
+    function tierOf(limit, t) {
+      if (limit >= 100) return { key: 'off', label: t('tier.off') }
+      if (limit > 75) return { key: 'light', label: t('tier.light') }
+      if (limit > 50) return { key: 'normal', label: t('tier.normal') }
+      if (limit > 25) return { key: 'medium', label: t('tier.medium') }
+      return { key: 'hard', label: t('tier.hard') }
     }
 
     // 下限 5%：再往下压，DSH 自己都要转不动了。
@@ -74,12 +160,27 @@ window.__ModuleLoader__.load({
       return h('div', { className: 'dpc-row' }, h('span', { className: 'dpc-key' }, props.name), h('span', { className: 'dpc-val' }, props.value))
     }
 
-    function PerfControlSection() {
+    function PerfControlSection(props) {
+      const locale = props.locale
       const [status, setStatus] = React.useState(null)
       const [limit, setLimit] = React.useState(100)
       const [busy, setBusy] = React.useState(false)
       const [error, setError] = React.useState(null)
       const [note, setNote] = React.useState(null)
+      const [, bump] = React.useState(0)
+
+      React.useEffect(() => {
+        if (locale === undefined || locale === null || typeof locale.subscribe !== 'function') return undefined
+        let off
+        try {
+          off = locale.subscribe(() => bump((n) => (n + 1) % 100000))
+        } catch {
+          return undefined
+        }
+        return typeof off === 'function' ? off : undefined
+      }, [locale])
+
+      const t = React.useMemo(() => makeTranslator(locale), [locale])
 
       React.useEffect(() => {
         let alive = true
@@ -95,28 +196,33 @@ window.__ModuleLoader__.load({
         }
       }, [])
 
-      const commit = React.useCallback(async (raw) => {
-        const next = clampLimit(raw)
-        setLimit(next)
-        setBusy(true)
-        setError(null)
-        setNote(null)
-        try {
-          const body = await postAction('apply', { limit: next })
-          setStatus(body)
-          setLimit(body.limit)
-          const outcome = body.outcome
-          if (outcome && outcome.ok === false) {
-            setNote(`设置已存下，但限速没生效：${outcome.error ?? outcome.reason}`)
-          } else {
-            setNote(`已应用：${body.tier.label}（${body.limit}%）`)
+      const commit = React.useCallback(
+        async (raw) => {
+          const next = clampLimit(raw)
+          const tt = makeTranslator(locale)
+          setLimit(next)
+          setBusy(true)
+          setError(null)
+          setNote(null)
+          try {
+            const body = await postAction('apply', { limit: next })
+            setStatus(body)
+            setLimit(body.limit)
+            const outcome = body.outcome
+            const tier = tierOf(body.limit, tt)
+            if (outcome && outcome.ok === false) {
+              setNote(`${tt('note.savedOnly')}: ${outcome.error ?? outcome.reason}`)
+            } else {
+              setNote(`${tt('note.applied')}: ${tier.label} (${body.limit}%)`)
+            }
+          } catch (err) {
+            setError(err.message ?? String(err))
+          } finally {
+            setBusy(false)
           }
-        } catch (err) {
-          setError(err.message ?? String(err))
-        } finally {
-          setBusy(false)
-        }
-      }, [])
+        },
+        [locale],
+      )
 
       const reset = React.useCallback(async () => {
         setBusy(true)
@@ -125,26 +231,23 @@ window.__ModuleLoader__.load({
           const body = await postAction('reset')
           setStatus(body)
           setLimit(body.limit)
-          setNote('已恢复不限制')
+          setNote(makeTranslator(locale)('note.reset'))
         } catch (err) {
           setError(err.message ?? String(err))
         } finally {
           setBusy(false)
         }
-      }, [])
+      }, [locale])
 
       const backend = status?.backend
-      const tier = tierOf(limit)
+      const tier = tierOf(limit, t)
       const appliedRate = status?.backend?.applied?.rate
+      const loading = t('val.loading')
 
       return h(
         'div',
         { className: 'dpc-root' },
-        h(
-          'p',
-          { className: 'dpc-lead' },
-          '给 DSH 整棵进程树设一个 CPU 上限。看 B 站抽帧、whisper 转写、python 这些活都是 DSH 拉起来的子进程，一起算在这根线里。100% 等于放开。',
-        ),
+        h('p', { className: 'dpc-lead' }, t('lead')),
 
         h(
           'div',
@@ -154,7 +257,9 @@ window.__ModuleLoader__.load({
             { className: 'dpc-headline' },
             h('span', { className: 'dpc-value' }, String(limit), h('small', null, '%')),
             h('span', { className: 'dpc-tier', 'data-key': tier.key }, tier.label),
-            appliedRate !== null && appliedRate !== undefined ? h('span', { className: 'dpc-note' }, `正在生效：${appliedRate / 100}%`) : null,
+            appliedRate !== null && appliedRate !== undefined
+              ? h('span', { className: 'dpc-note' }, `${t('live.prefix')}: ${appliedRate / 100}%`)
+              : null,
           ),
           h('input', {
             className: 'dpc-slider',
@@ -173,8 +278,8 @@ window.__ModuleLoader__.load({
           h(
             'div',
             { className: 'dpc-actions' },
-            h('button', { className: 'dpc-btn', disabled: busy, onClick: () => commit(limit) }, busy ? '应用中…' : '应用'),
-            h('button', { className: 'dpc-btn ghost', disabled: busy, onClick: reset }, '恢复不限制'),
+            h('button', { className: 'dpc-btn', disabled: busy, onClick: () => commit(limit) }, busy ? t('btn.applying') : t('btn.apply')),
+            h('button', { className: 'dpc-btn ghost', disabled: busy, onClick: reset }, t('btn.reset')),
             note !== null ? h('span', { className: 'dpc-note' }, note) : null,
             error !== null ? h('span', { className: 'dpc-note dpc-err' }, error) : null,
           ),
@@ -184,8 +289,8 @@ window.__ModuleLoader__.load({
           ? h(
               'div',
               { className: 'dpc-warn' },
-              h('div', null, '硬限速后端还没就绪：', h('code', null, 'koffi'), ' 没装上，现在只会存设置，不会真的压 CPU。'),
-              h('div', null, '装一下就行：', h('code', null, 'pnpm add koffi'), '（或者在插件目录里装），然后重启 DSH。'),
+              h('div', null, t('warn.title')),
+              h('div', null, t('warn.installPre'), ' ', h('code', null, 'npm i koffi'), ' ', t('warn.installPost')),
               backend.error !== null && backend.error !== undefined ? h('div', { className: 'dpc-err' }, backend.error) : null,
             )
           : null,
@@ -196,25 +301,49 @@ window.__ModuleLoader__.load({
           h(
             'div',
             { className: 'dpc-rows' },
-            h(Row, { name: '平台', value: backend === undefined ? '读取中…' : `${backend.platform}${backend.supported ? '' : '（只支持 Windows 硬限速）'}` }),
-            h(Row, { name: '后端', value: backend === undefined ? '读取中…' : backend.available ? `koffi ${backend.version ?? ''}` : '未就绪' }),
-            h(Row, { name: 'Job', value: backend === undefined ? '读取中…' : backend.job ? (backend.assigned ? '已接管本进程树' : '已建，未接管') : '未建' }),
-            h(Row, { name: '已生效上限', value: appliedRate === null || appliedRate === undefined ? '不限制' : `${appliedRate / 100}%` }),
-            h(Row, { name: '状态文件', value: status?.stateFile ?? '读取中…' }),
+            h(Row, {
+              name: t('row.platform'),
+              value: backend === undefined ? loading : `${backend.platform}${backend.supported ? '' : t('val.windowsOnly')}`,
+            }),
+            h(Row, {
+              name: t('row.backend'),
+              value: backend === undefined ? loading : backend.available ? `koffi ${backend.version ?? ''}` : t('val.notReady'),
+            }),
+            h(Row, {
+              name: t('row.job'),
+              value:
+                backend === undefined
+                  ? loading
+                  : backend.job
+                    ? backend.assigned
+                      ? t('val.jobAssigned')
+                      : t('val.jobCreated')
+                    : t('val.jobNone'),
+            }),
+            h(Row, {
+              name: t('row.cap'),
+              value: appliedRate === null || appliedRate === undefined ? t('val.unlimited') : `${appliedRate / 100}%`,
+            }),
+            h(Row, { name: t('row.state'), value: status?.stateFile ?? loading }),
           ),
         ),
 
-        h(
-          'p',
-          { className: 'dpc-lead' },
-          '两点限制先说清楚：滑块对已经在跑的进程不生效（Job 是接管之后新生的才继承）；这个上限管的是整棵树，包括界面进程，别一上来拉到 25%。',
-        ),
+        h('p', { className: 'dpc-lead' }, t('footer')),
       )
     }
 
     return {
       inject: ['slots'],
       apply(ctx) {
+        const locale = typeof ctx.get === 'function' ? ctx.get('locale') : undefined
+
+        if (locale !== undefined && locale !== null && typeof locale.register === 'function') {
+          ctx.effect(
+            () => locale.register(NS, { zh, en }),
+            'dsh-perf-control: dictionaries',
+          )
+        }
+
         ctx.effect(
           function () {
             const style = document.createElement('style')
@@ -228,6 +357,8 @@ window.__ModuleLoader__.load({
           'dsh-perf-control: styles',
         )
 
+        const Section = (props) => h(PerfControlSection, { ...props, locale })
+
         try {
           ctx.slots.inject('settings.section', function () {
             return ctx.slots.register(
@@ -235,9 +366,9 @@ window.__ModuleLoader__.load({
                 name: 'settings.section',
                 id: 'perf-control',
                 order: 26,
-                label: '性能控制',
+                label: () => makeTranslator(locale)('nav'),
               },
-              PerfControlSection,
+              Section,
             )
           })
         } catch (err) {

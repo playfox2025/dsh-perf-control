@@ -28,13 +28,14 @@
     "lib",
     "scripts",
     "assets",
+    "locale",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
   ],
   "dsh": {
     "category": "extension",
-    "displayName": "性能控制",
+    "displayName": "Perf Control",
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
@@ -47,6 +48,7 @@
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
