@@ -1,0 +1,56 @@
+{
+  "name": "dsh-perf-control",
+  "version": "0.1.0",
+  "description": "Performance control for DeepSeek Harness: a 5–100 slider in Settings that hard-caps the CPU rate of the whole DSH process tree via a Windows Job Object. · DSH 性能控制：设置页一根滑块，用 Windows Job Object 硬限速整棵 DSH 进程树。",
+  "type": "module",
+  "license": "MIT",
+  "icon": "assets/icon.svg",
+  "os": [
+    "win32"
+  ],
+  "keywords": [
+    "deepseek",
+    "harness",
+    "dsh",
+    "dsh-plugin",
+    "cpu",
+    "throttle",
+    "job-object",
+    "performance"
+  ],
+  "engines": {
+    "node": ">=22",
+    "dsh": ">=0.2.1-rc.1"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib",
+    "scripts",
+    "assets",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "category": "extension",
+    "displayName": "性能控制",
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": []
+    }
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "optionalDependencies": {
+    "koffi": "^2.16.4"
+  }
+}
