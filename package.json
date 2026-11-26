@@ -1,6 +1,6 @@
 {
   "name": "dsh-perf-control",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Performance control for DeepSeek Harness: a 5–100 slider in Settings that hard-caps the CPU rate of the whole DSH process tree via a Windows Job Object. · DSH 性能控制：设置页一根滑块，用 Windows Job Object 硬限速整棵 DSH 进程树。",
   "type": "module",
   "license": "MIT",
@@ -20,7 +20,7 @@
   ],
   "engines": {
     "node": ">=22",
-    "dsh": ">=0.2.1-rc.1"
+    "dsh": ">=0.2.1-rc.1 <0.3.0-0 || >=0.2.2-rc.1"
   },
   "files": [
     "index.js",
