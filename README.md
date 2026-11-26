@@ -59,7 +59,7 @@ dsh plugin --profile desktop add github:playfox2025/dsh-perf-control
 ## 兼容性
 
 - Windows（硬限速本身是 Windows API）。
-- DSH ≥ 0.2.1-rc.1（`engines.dsh`）。
+- DSH ≥ 0.2.1-rc.1，范围写成 `>=0.2.1-rc.1 <0.3.0-0 || >=0.2.2-rc.1`。后半段别删：semver 只让预发布版本匹配「同一 major.minor.patch 元组上带预发布标签的比较符」，`>=0.2.1-rc.1` 单写会把 0.2.2-rc.x 的宿主判成不兼容。宿主再往上升（比如 0.2.3-rc）时要再补一个分支。
 - Node ≥ 22。
 - 界面跟随 DSH 的语言：中文显示「性能控制」，英文显示「Perf Control」。设置页文案在 `client.js` 的 `zh` / `en` 词典里，插件卡文案在 `locale/zh.json`、`locale/en.json`。
 
