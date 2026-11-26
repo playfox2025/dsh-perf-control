@@ -59,7 +59,7 @@ The floor is 5%: below that the whole tree (UI included) stops moving. The slide
 ## Compatibility
 
 - Windows (the hard cap itself is a Windows API).
-- DSH ≥ 0.2.1-rc.1 (`engines.dsh`).
+- DSH ≥ 0.2.1-rc.1, declared as `>=0.2.1-rc.1 <0.3.0-0 || >=0.2.2-rc.1`. Keep the second branch: semver only lets a prerelease match a comparator that carries a prerelease tag on the *same* major.minor.patch tuple, so `>=0.2.1-rc.1` alone marks a 0.2.2-rc.x host as incompatible. Add another branch when the host moves on (e.g. 0.2.3-rc).
 - Node ≥ 22.
 - The UI follows the DSH language: "Perf Control" in English, 「性能控制」 in Chinese. Page strings live in the `zh` / `en` dictionaries in `client.js`; card text lives in `locale/zh.json` and `locale/en.json`.
 
